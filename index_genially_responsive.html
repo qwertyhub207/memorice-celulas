@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memorice de las células</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Just+Me+Again+Down+Here&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  font-family: "Nunito", Arial, sans-serif;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(78,255,194,.18) 0 70px, transparent 72px),
+    radial-gradient(circle at 85% 15%, rgba(82,185,255,.18) 0 90px, transparent 92px),
+    linear-gradient(135deg, #071c2f, #0b4050 50%, #102b49);
+  color: white;
+  text-align: center;
+  margin: 0;
+  padding: 22px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-family: "Just Me Again Down Here", cursive;
+  color: #8deaff;
+  font-size: clamp(55px, 9vw, 88px);
+  line-height: .9;
+  margin: 5px 0 8px;
+  text-shadow: 3px 4px 0 #08253b, 0 0 18px rgba(141,234,255,.35);
+}
+
+.subtitulo {
+  font-size: 19px;
+  font-weight: 700;
+  margin: 10px auto;
+}
+
+.progreso {
+  width: min(100%, 540px);
+  margin: 18px auto 12px;
+}
+
+#contador {
+  font-size: 19px;
+  font-weight: 800;
+  margin: 0 0 8px;
+}
+
+.barra {
+  height: 16px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.28);
+  border: 2px solid rgba(141,234,255,.45);
+  overflow: hidden;
+}
+
+#barraProgreso {
+  width: 0%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #54d6a0, #8deaff);
+  transition: width .45s ease;
+}
+
+#tablero {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  max-width: 760px;
+  margin: 24px auto;
+}
+
+.carta {
+  min-height: 120px;
+  border: 3px solid #8deaff;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #17456e, #0e2c50);
+  color: white;
+  font-family: "Nunito", Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 10px;
+  box-shadow: 0 8px 18px rgba(0,0,0,.25);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.carta::before {
+  content: "🧬";
+  display: block;
+  font-size: 27px;
+  margin-bottom: 4px;
+}
+
+.carta:hover {
+  transform: translateY(-4px) scale(1.025);
+  box-shadow: 0 12px 24px rgba(0,0,0,.35);
+}
+
+.carta.volteada {
+  background: linear-gradient(145deg, #fff3b0, #fff9dc);
+  color: #153b68;
+  border-color: #ffe66d;
+}
+
+.carta.volteada::before {
+  content: "🔬";
+}
+
+.carta.encontrada {
+  background: linear-gradient(145deg, #54d6a0, #8ff0c5);
+  color: #103d32;
+  border-color: #d0ffe9;
+  cursor: default;
+  animation: parejaEncontrada .65s ease;
+}
+
+.carta.encontrada::before {
+  content: "✨";
+}
+
+@keyframes parejaEncontrada {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.10) rotate(-2deg); box-shadow: 0 0 30px rgba(141,255,210,.9); }
+  70% { transform: scale(.97) rotate(2deg); }
+  100% { transform: scale(1); }
+}
+
+#mensaje {
+  min-height: 34px;
+  margin: 8px 0 16px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffe66d;
+}
+
+#reiniciar {
+  background: linear-gradient(135deg, #ffe66d, #ffb84d);
+  color: #10264e;
+  border: 3px solid rgba(255,255,255,.55);
+  border-radius: 14px;
+  padding: 13px 28px;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 7px 0 #b66d2d, 0 10px 20px rgba(0,0,0,.22);
+}
+
+#reiniciar:active {
+  transform: translateY(5px);
+  box-shadow: 0 2px 0 #b66d2d;
+}
+
+/* Pantalla final */
+#pantallaFinal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  background: rgba(6,20,33,.78);
+  backdrop-filter: blur(5px);
+  z-index: 20;
+}
+
+#pantallaFinal.activa {
+  display: flex;
+  animation: aparecer .5s ease;
+}
+
+.finalTarjeta {
+  width: min(100%, 780px);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 38px 30px 30px;
+  border-radius: 28px;
+  background: #ff9d32;
+  border: 7px solid #ffcf70;
+  box-shadow: 0 0 45px rgba(255,157,50,.55);
+  color: #0750a0;
+  animation: finalEntrada .65s cubic-bezier(.2,1.3,.4,1);
+}
+
+.finalTarjeta h2 {
+  margin: 0 0 18px;
+  font-family: "Just Me Again Down Here", cursive;
+  font-size: clamp(58px, 10vw, 92px);
+  line-height: .85;
+  color: #0750a0;
+}
+
+.finalTarjeta p {
+  margin: 9px auto;
+  max-width: 650px;
+  font-size: clamp(17px, 2.5vw, 22px);
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+.finalBoton {
+  margin-top: 22px;
+  background: #0750a0;
+  color: white;
+  border: 0;
+  border-radius: 13px;
+  padding: 13px 28px;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 0 #04386f;
+}
+
+@keyframes aparecer {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes finalEntrada {
+  from { transform: scale(.75) translateY(40px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* RESPONSIVE GENIALLY */
+html,body{width:100%;min-height:100%;overflow-x:hidden}
+body{min-height:100vh;min-height:100dvh;padding:clamp(8px,2vw,22px);display:flex;flex-direction:column;align-items:center}
+h1{font-size:clamp(38px,8vw,88px);margin:clamp(2px,1vw,5px) 0 4px}
+.subtitulo{font-size:clamp(13px,2.2vw,19px);margin:4px auto}
+.progreso{width:min(94vw,540px);margin:clamp(8px,1.5vw,18px) auto 6px}
+#contador{font-size:clamp(13px,2vw,19px);margin-bottom:5px}
+.barra{height:clamp(10px,1.7vw,16px)}
+#tablero{width:min(94vw,760px);margin:clamp(10px,2vw,24px) auto;gap:clamp(5px,1.2vw,12px)}
+.carta{min-height:0;height:clamp(72px,14vw,120px);padding:clamp(4px,1vw,10px);border-width:clamp(2px,.4vw,3px);border-radius:clamp(9px,2vw,16px);font-size:clamp(11px,2.1vw,18px);line-height:1.08}
+.carta::before{font-size:clamp(17px,3vw,27px);margin-bottom:2px}
+#mensaje{min-height:clamp(24px,5vw,34px);margin:2px 0 7px;font-size:clamp(14px,2.7vw,22px)}
+#reiniciar{padding:clamp(8px,1.5vw,13px) clamp(16px,3vw,28px);font-size:clamp(13px,2.3vw,18px);margin-bottom:5px}
+@media(max-height:700px){body{padding-top:6px;padding-bottom:6px}h1{font-size:clamp(32px,7vw,60px)}.subtitulo{margin:1px auto}.progreso{margin:5px auto}#tablero{margin:7px auto;gap:5px}.carta{height:clamp(58px,12vh,90px)}#mensaje{min-height:20px;margin:1px 0 4px}}
+@media(max-width:430px){#tablero{grid-template-columns:repeat(2,1fr);max-width:380px}.carta{height:clamp(72px,19vw,100px)}}
+@media(min-width:431px){#tablero{grid-template-columns:repeat(4,1fr)}}
+@media(max-height:500px){h1{font-size:clamp(28px,7vh,48px)}.subtitulo{display:none}.progreso{margin:3px auto}#tablero{margin:5px auto}.carta{height:clamp(48px,15vh,72px);font-size:clamp(9px,2vw,14px)}.carta::before{font-size:clamp(13px,3vh,20px)}#reiniciar{padding:5px 14px}}
+
+/* ===== AJUSTE RESPONSIVE ESPECÍFICO PARA GENIALLY ===== */
+
+html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: clamp(6px, 1.4vmin, 18px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* Todo se calcula también en función de la altura disponible */
+h1 {
+  flex: 0 0 auto;
+  font-size: clamp(30px, min(8vw, 9vh), 82px);
+  line-height: .82;
+  margin: clamp(2px, 1vh, 8px) 0 clamp(2px, .8vh, 8px);
+}
+
+.subtitulo {
+  flex: 0 0 auto;
+  font-size: clamp(11px, min(2.1vw, 2.5vh), 18px);
+  line-height: 1.1;
+  margin: 2px auto;
+}
+
+.progreso {
+  flex: 0 0 auto;
+  width: min(92%, 540px);
+  margin: clamp(4px, 1vh, 12px) auto;
+}
+
+#contador {
+  font-size: clamp(11px, min(2vw, 2.5vh), 18px);
+  margin: 0 0 4px;
+}
+
+.barra {
+  height: clamp(7px, 1.5vh, 14px);
+}
+
+/* El tablero es el elemento flexible: ocupa el espacio restante */
+#tablero {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: min(94%, 760px);
+  max-height: none;
+  margin: clamp(5px, 1vh, 14px) auto;
+  gap: clamp(4px, min(1vw, 1.4vh), 11px);
+  align-content: stretch;
+}
+
+/* Las cartas se estiran para llenar las filas disponibles,
+   pero nunca fuerzan scroll vertical */
+.carta {
+  min-height: 0;
+  height: auto;
+  padding: clamp(3px, min(1vw, 1.2vh), 10px);
+  border-width: clamp(2px, .35vw, 3px);
+  border-radius: clamp(8px, 1.8vw, 16px);
+  font-size: clamp(10px, min(2vw, 2.7vh), 18px);
+  line-height: 1.05;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.carta::before {
+  font-size: clamp(14px, min(3vw, 3.5vh), 27px);
+  margin-bottom: clamp(1px, .4vh, 4px);
+  flex: 0 0 auto;
+}
+
+#mensaje {
+  flex: 0 0 auto;
+  min-height: 0;
+  margin: clamp(2px, .5vh, 7px) 0;
+  font-size: clamp(12px, min(2.5vw, 2.8vh), 21px);
+  line-height: 1.05;
+}
+
+#reiniciar {
+  flex: 0 0 auto;
+  margin-bottom: clamp(2px, .7vh, 8px);
+  padding: clamp(6px, min(1.3vw, 1.5vh), 12px)
+           clamp(13px, 2.8vw, 28px);
+  font-size: clamp(12px, min(2.2vw, 2.5vh), 18px);
+}
+
+/* Pantalla final: también se adapta al espacio del iframe */
+#pantallaFinal {
+  width: 100%;
+  height: 100%;
+  padding: clamp(8px, 3vw, 22px);
+}
+
+.finalTarjeta {
+  max-width: 780px;
+  max-height: 94%;
+  overflow-y: auto;
+  padding: clamp(16px, 4vw, 38px) clamp(14px, 3.5vw, 30px)
+           clamp(16px, 3.5vw, 30px);
+  border-radius: clamp(15px, 3vw, 28px);
+}
+
+.finalTarjeta h2 {
+  font-size: clamp(38px, min(10vw, 10vh), 90px);
+  margin-bottom: clamp(8px, 2vh, 18px);
+}
+
+.finalTarjeta p {
+  font-size: clamp(13px, min(2.5vw, 2.8vh), 22px);
+  line-height: 1.25;
+  margin: clamp(5px, 1vh, 9px) auto;
+}
+
+.finalBoton {
+  margin-top: clamp(10px, 2vh, 22px);
+  padding: clamp(8px, 1.5vh, 13px) clamp(16px, 3vw, 28px);
+  font-size: clamp(13px, min(2.2vw, 2.5vh), 18px);
+}
+
+/* Mantener 4 columnas en escritorio y 2 en pantallas muy estrechas */
+@media (max-width: 430px) {
+  #tablero {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* En una ventana muy baja, ocultamos solo el subtítulo para conservar
+   las cartas y el botón dentro de la pantalla. */
+@media (max-height: 500px) {
+  .subtitulo {
+    display: none;
+  }
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>🧬 Memorice de las células</h1>
+<p class="subtitulo">Encuentra las parejas: cada concepto con su función.</p>
+
+<div class="progreso">
+  <p id="contador">Parejas encontradas: 0 de 7</p>
+  <div class="barra"><div id="barraProgreso"></div></div>
+</div>
+
+<div id="tablero"></div>
+<div id="mensaje"></div>
+
+<button id="reiniciar" onclick="iniciarJuego()">🔄 Volver a jugar</button>
+
+<div id="pantallaFinal">
+  <div class="finalTarjeta">
+    <h2>FELICITACIONES</h2>
+
+    <p>Hoy descubriste que los seres vivos están formados por células y conociste algunas de sus partes.</p>
+    <p>Ya escuchaste palabras como núcleo, membrana celular, citoplasma, mitocondria y cloroplasto.</p>
+    <p>¡Ahora ya sabes un poquito de qué se tratan!</p>
+    <p>Esto es solo el comienzo del mundo microscópico...</p>
+
+    <button class="finalBoton" onclick="iniciarJuego()">🔬 Jugar de nuevo</button>
+  </div>
+</div>
+
+<script>
+/* Se mantienen las 7 parejas originales.
+   Solo se corrigen las comillas/coma que impedían ejecutar el juego. */
+const parejas = [
+  ["Célula", "Unidad más simple de los seres vivos."],
+  ["Célula Vegetal", "Unidad básica de las plantas, con estructuras como los cloroplastos."],
+  ["Célula Animal", "Unidad fundamental de los animales, que no contiene estructuras como los cloroplastos."],
+  ["Núcleo", "Produce energía para la célula."],
+  ["Membrana Celular", "La frontera entre el medio interno y externo."],
+  ["Cloroplasto", "Órgano de las células vegetales que les permiten hacer fotosíntesis."],
+  ["Microscopio", "Instrumento para ver cosas muy pequeñas."]
+];
+
+const TOTAL_PAREJAS = parejas.length;
+
+let cartas = [];
+let seleccionadas = [];
+let bloqueado = false;
+let encontradas = 0;
+
+function mezclar(lista) {
+  for (let i = lista.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [lista[i], lista[j]] = [lista[j], lista[i]];
+  }
+  return lista;
+}
+
+/* Sonido generado por el navegador: no necesita otro archivo. */
+function crearSonidoFinal() {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return;
+
+  const audio = new AudioContext();
+  const ahora = audio.currentTime;
+  const notas = [523.25, 659.25, 783.99, 1046.5];
+
+  notas.forEach((frecuencia, i) => {
+    const oscilador = audio.createOscillator();
+    const ganancia = audio.createGain();
+    const inicio = ahora + i * 0.15;
+
+    oscilador.type = "triangle";
+    oscilador.frequency.value = frecuencia;
+
+    ganancia.gain.setValueAtTime(0.0001, inicio);
+    ganancia.gain.exponentialRampToValueAtTime(.22, inicio + .03);
+    ganancia.gain.exponentialRampToValueAtTime(.0001, inicio + .65);
+
+    oscilador.connect(ganancia);
+    ganancia.connect(audio.destination);
+
+    oscilador.start(inicio);
+    oscilador.stop(inicio + .7);
+  });
+
+  setTimeout(() => audio.close(), 3000);
+}
+
+function crearSonidoPareja() {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return;
+
+  const audio = new AudioContext();
+  const ahora = audio.currentTime;
+
+  [523.25, 659.25].forEach((frecuencia, i) => {
+    const oscilador = audio.createOscillator();
+    const ganancia = audio.createGain();
+    const inicio = ahora + i * .08;
+
+    oscilador.type = "sine";
+    oscilador.frequency.value = frecuencia;
+
+    ganancia.gain.setValueAtTime(.0001, inicio);
+    ganancia.gain.exponentialRampToValueAtTime(.14, inicio + .02);
+    ganancia.gain.exponentialRampToValueAtTime(.0001, inicio + .25);
+
+    oscilador.connect(ganancia);
+    ganancia.connect(audio.destination);
+
+    oscilador.start(inicio);
+    oscilador.stop(inicio + .28);
+  });
+
+  setTimeout(() => audio.close(), 700);
+}
+
+function actualizarProgreso() {
+  document.getElementById("contador").textContent =
+    "Parejas encontradas: " + encontradas + " de " + TOTAL_PAREJAS;
+
+  document.getElementById("barraProgreso").style.width =
+    ((encontradas / TOTAL_PAREJAS) * 100) + "%";
+}
+
+function iniciarJuego() {
+  document.getElementById("pantallaFinal").classList.remove("activa");
+
+  cartas = [];
+  parejas.forEach((pareja, indice) => {
+    cartas.push({ texto: pareja[0], pareja: indice });
+    cartas.push({ texto: pareja[1], pareja: indice });
+  });
+
+  mezclar(cartas);
+  seleccionadas = [];
+  bloqueado = false;
+  encontradas = 0;
+
+  document.getElementById("mensaje").textContent = "";
+  actualizarProgreso();
+
+  const tablero = document.getElementById("tablero");
+  tablero.innerHTML = "";
+
+  cartas.forEach((carta, indice) => {
+    const boton = document.createElement("button");
+    boton.className = "carta";
+    boton.textContent = "?";
+    boton.setAttribute("aria-label", "Carta oculta");
+    boton.onclick = () => voltearCarta(indice, boton);
+    tablero.appendChild(boton);
+  });
+}
+
+function voltearCarta(indice, boton) {
+  if (
+    bloqueado ||
+    boton.classList.contains("volteada") ||
+    boton.classList.contains("encontrada")
+  ) return;
+
+  boton.textContent = cartas[indice].texto;
+  boton.classList.add("volteada");
+  seleccionadas.push({ indice, boton });
+
+  if (seleccionadas.length === 2) {
+    bloqueado = true;
+
+    const primera = seleccionadas[0];
+    const segunda = seleccionadas[1];
+
+    if (cartas[primera.indice].pareja === cartas[segunda.indice].pareja) {
+      primera.boton.classList.add("encontrada");
+      segunda.boton.classList.add("encontrada");
+
+      encontradas++;
+      actualizarProgreso();
+      crearSonidoPareja();
+
+      seleccionadas = [];
+      bloqueado = false;
+
+      if (encontradas === TOTAL_PAREJAS) {
+        document.getElementById("mensaje").textContent =
+          "🎉 ¡Felicitaciones! ¡Encontraste todas las parejas!";
+
+        setTimeout(() => {
+          document.getElementById("pantallaFinal").classList.add("activa");
+          crearSonidoFinal();
+        }, 900);
+      }
+
+    } else {
+      setTimeout(() => {
+        primera.boton.textContent = "?";
+        segunda.boton.textContent = "?";
+        primera.boton.classList.remove("volteada");
+        segunda.boton.classList.remove("volteada");
+        seleccionadas = [];
+        bloqueado = false;
+      }, 1200);
+    }
+  }
+}
+
+iniciarJuego();
+</script>
+
+</body>
+</html>
