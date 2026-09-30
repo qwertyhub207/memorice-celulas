@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memorice de las células</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #10264e, #286b91);
+    color: white;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+  }
+
+  h1 {
+    color: #ffe66d;
+    font-size: 32px;
+  }
+
+  p {
+    font-size: 18px;
+  }
+
+  #tablero {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    max-width: 700px;
+    margin: 25px auto;
+  }
+
+  .carta {
+    height: 120px;
+    border: 3px solid #8deaff;
+    border-radius: 14px;
+    background: #153b68;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 8px;
+    transition: transform 0.2s;
+  }
+
+  .carta:hover {
+    transform: scale(1.04);
+  }
+
+  .carta.volteada {
+    background: #fff3b0;
+    color: #153b68;
+  }
+
+  .carta.encontrada {
+    background: #54d6a0;
+    color: #103d32;
+    border-color: #baffdf;
+    cursor: default;
+  }
+
+  button#reiniciar {
+    background: #ffe66d;
+    color: #10264e;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  #mensaje {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ffe66d;
+    margin: 20px;
+  }
+
+  @media (max-width: 600px) {
+    #tablero {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .carta {
+      height: 115px;
+      font-size: 15px;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<h1>🧬 Memorice de las células</h1>
+<p>Encuentra las parejas: cada concepto con su función.</p>
+<p id="contador">Parejas encontradas: 0 de 6</p>
+
+<div id="tablero"></div>
+
+<div id="mensaje"></div>
+
+<button id="reiniciar" onclick="iniciarJuego()">
+  Volver a jugar
+</button>
+
+<script>
+const parejas = [
+  ["Célula", "Unidad más simple de los seres vivos."],
+  ["Célula Vegetal", "Unidad básica de las plantas, con estructuras como los cloroplastos."],
+  ["Célula Animal", "Unidad fundamental de los animales, que no contiene estructuras como los cloroplastos."],
+  ["Núcleo", "Produce energía para la célula."],
+  ["Membrana Celular", "La frontera entre el medio interno y externo."],
+  ["Cloroplasto", ""Órgano" de las células vegetales que les permiten hacer fotosíntesis."]
+ ["Microscopio", "Instrumento para ver cosas muy pequeñas."]
+
+];
+
+let cartas = [];
+let seleccionadas = [];
+let bloqueado = false;
+let encontradas = 0;
+
+function mezclar(lista) {
+  for (let i = lista.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [lista[i], lista[j]] = [lista[j], lista[i]];
+  }
+  return lista;
+}
+
+function iniciarJuego() {
+  cartas = [];
+
+  parejas.forEach((pareja, indice) => {
+    cartas.push({
+      texto: pareja[0],
+      pareja: indice
+    });
+
+    cartas.push({
+      texto: pareja[1],
+      pareja: indice
+    });
+  });
+
+  mezclar(cartas);
+
+  seleccionadas = [];
+  bloqueado = false;
+  encontradas = 0;
+
+  document.getElementById("mensaje").textContent = "";
+  document.getElementById("contador").textContent =
+    "Parejas encontradas: 0 de 7";
+
+  const tablero = document.getElementById("tablero");
+  tablero.innerHTML = "";
+
+  cartas.forEach((carta, indice) => {
+    const boton = document.createElement("button");
+
+    boton.className = "carta";
+    boton.textContent = "?";
+    boton.setAttribute("aria-label", "Carta oculta");
+
+    boton.onclick = () => voltearCarta(indice, boton);
+
+    tablero.appendChild(boton);
+  });
+}
+
+function voltearCarta(indice, boton) {
+  if (
+    bloqueado ||
+    boton.classList.contains("volteada") ||
+    boton.classList.contains("encontrada")
+  ) {
+    return;
+  }
+
+  boton.textContent = cartas[indice].texto;
+  boton.classList.add("volteada");
+  seleccionadas.push({ indice, boton });
+
+  if (seleccionadas.length === 2) {
+    bloqueado = true;
+
+    const primera = seleccionadas[0];
+    const segunda = seleccionadas[1];
+
+    if (
+      cartas[primera.indice].pareja ===
+      cartas[segunda.indice].pareja
+    ) {
+      primera.boton.classList.add("encontrada");
+      segunda.boton.classList.add("encontrada");
+
+      encontradas++;
+
+      document.getElementById("contador").textContent =
+        "Parejas encontradas: " + encontradas + " de 7";
+
+      seleccionadas = [];
+      bloqueado = false;
+
+      if (encontradas === 7) {
+        document.getElementById("mensaje").textContent =
+          "🎉 ¡Felicitaciones! ¡Encontraste todas las parejas!";
+      }
+    } else {
+      setTimeout(() => {
+        primera.boton.textContent = "?";
+        segunda.boton.textContent = "?";
+
+        primera.boton.classList.remove("volteada");
+        segunda.boton.classList.remove("volteada");
+
+        seleccionadas = [];
+        bloqueado = false;
+      }, 1200);
+    }
+  }
+}
+
+iniciarJuego();
+</script>
+
+</body>
+</html>
