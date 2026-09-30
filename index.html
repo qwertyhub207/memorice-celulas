@@ -96,7 +96,8 @@
 
 <h1>🧬 Memorice de las células</h1>
 <p>Encuentra las parejas: cada concepto con su función.</p>
-<p id="contador">Parejas encontradas: 0 de 6</p>
+
+<p id="contador">Parejas encontradas: 0 de 7</p>
 
 <div id="tablero"></div>
 
@@ -107,15 +108,21 @@
 </button>
 
 <script>
+
 const parejas = [
   ["Célula", "Unidad más simple de los seres vivos."],
-  ["Célula Vegetal", "Unidad básica de las plantas, con estructuras como los cloroplastos."],
-  ["Célula Animal", "Unidad fundamental de los animales, que no contiene estructuras como los cloroplastos."],
-  ["Núcleo", "Produce energía para la célula."],
-  ["Membrana Celular", "La frontera entre el medio interno y externo."],
-  ["Cloroplasto", ""Órgano" de las células vegetales que les permiten hacer fotosíntesis."]
- ["Microscopio", "Instrumento para ver cosas muy pequeñas."]
 
+  ["Célula Vegetal", "Unidad básica de las plantas, con estructuras como los cloroplastos."],
+
+  ["Célula Animal", "Unidad fundamental de los animales, que no contiene estructuras como los cloroplastos."],
+
+  ["Núcleo", "Produce energía para la célula."],
+
+  ["Membrana Celular", "La frontera entre el medio interno y externo."],
+
+  ["Cloroplasto", "Órgano de las células vegetales que les permite hacer fotosíntesis."],
+
+  ["Microscopio", "Instrumento para ver cosas muy pequeñas."]
 ];
 
 let cartas = [];
@@ -126,15 +133,19 @@ let encontradas = 0;
 function mezclar(lista) {
   for (let i = lista.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
+
     [lista[i], lista[j]] = [lista[j], lista[i]];
   }
+
   return lista;
 }
 
 function iniciarJuego() {
+
   cartas = [];
 
   parejas.forEach((pareja, indice) => {
+
     cartas.push({
       texto: pareja[0],
       pareja: indice
@@ -144,6 +155,7 @@ function iniciarJuego() {
       texto: pareja[1],
       pareja: indice
     });
+
   });
 
   mezclar(cartas);
@@ -153,26 +165,37 @@ function iniciarJuego() {
   encontradas = 0;
 
   document.getElementById("mensaje").textContent = "";
+
   document.getElementById("contador").textContent =
     "Parejas encontradas: 0 de 7";
 
   const tablero = document.getElementById("tablero");
+
   tablero.innerHTML = "";
 
   cartas.forEach((carta, indice) => {
+
     const boton = document.createElement("button");
 
     boton.className = "carta";
-    boton.textContent = "?";
-    boton.setAttribute("aria-label", "Carta oculta");
 
-    boton.onclick = () => voltearCarta(indice, boton);
+    boton.textContent = "?";
+
+    boton.setAttribute(
+      "aria-label",
+      "Carta oculta"
+    );
+
+    boton.onclick = () =>
+      voltearCarta(indice, boton);
 
     tablero.appendChild(boton);
+
   });
 }
 
 function voltearCarta(indice, boton) {
+
   if (
     bloqueado ||
     boton.classList.contains("volteada") ||
@@ -182,50 +205,77 @@ function voltearCarta(indice, boton) {
   }
 
   boton.textContent = cartas[indice].texto;
+
   boton.classList.add("volteada");
-  seleccionadas.push({ indice, boton });
+
+  seleccionadas.push({
+    indice,
+    boton
+  });
 
   if (seleccionadas.length === 2) {
+
     bloqueado = true;
 
     const primera = seleccionadas[0];
+
     const segunda = seleccionadas[1];
 
     if (
       cartas[primera.indice].pareja ===
       cartas[segunda.indice].pareja
     ) {
+
       primera.boton.classList.add("encontrada");
+
       segunda.boton.classList.add("encontrada");
 
       encontradas++;
 
       document.getElementById("contador").textContent =
-        "Parejas encontradas: " + encontradas + " de 7";
+        "Parejas encontradas: " +
+        encontradas +
+        " de 7";
 
       seleccionadas = [];
+
       bloqueado = false;
 
       if (encontradas === 7) {
+
         document.getElementById("mensaje").textContent =
           "🎉 ¡Felicitaciones! ¡Encontraste todas las parejas!";
+
       }
+
     } else {
+
       setTimeout(() => {
+
         primera.boton.textContent = "?";
+
         segunda.boton.textContent = "?";
 
         primera.boton.classList.remove("volteada");
+
         segunda.boton.classList.remove("volteada");
 
         seleccionadas = [];
+
         bloqueado = false;
+
       }, 1200);
+
     }
   }
 }
 
 iniciarJuego();
+
+</script>
+
+</body>
+</html>
 </script>
 
 </body>
